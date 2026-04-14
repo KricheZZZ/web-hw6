@@ -130,6 +130,7 @@
     <div class="bottom-links">
         <a href="login.php">🔑 Войти в систему</a>
         <a href="view.php">📊 Просмотреть сохранённые анкеты</a>
+        <a href="admin.php">АДМИН ПАНЕЛЬ</a>
     </div>
 
     <?php if (!$is_logged_in): ?>
