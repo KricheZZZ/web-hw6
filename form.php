@@ -154,7 +154,7 @@
         <button type="submit"><?= $is_logged_in ? 'Сохранить изменения' : 'Сохранить' ?></button>
     </form>
 
-    <div class="bottom-links">
+    <div class="back-link">
         <a href="login.php">🔑 Войти в систему</a>
         <a href="view.php">📊 Просмотреть сохранённые анкеты</a>
         <a href="admin.php">⚙️ АДМИН ПАНЕЛЬ</a>
