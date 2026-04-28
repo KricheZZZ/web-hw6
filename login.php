@@ -60,13 +60,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход — Задание 6</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <h1>Вход в систему</h1>
-    <p class="subtitle">Введите логин и пароль, которые были выданы при первой отправке формы</p>
+<video autoplay muted loop id="bgVideo">
+    <source src="background.mp4" type="video/mp4">
+</video>
 
+<header class="site-header">
+    <div class="header-content">
+        <h1>Вход в систему</h1>
+        <p>Введите логин и пароль, полученные при отправке анкеты</p>
+    </div>
+</header>
+
+<div class="container">
     <?php if (!empty($errors)): ?>
         <div class="messages">
             <?php foreach ($errors as $err): ?>
@@ -78,23 +87,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST">
         <div class="form-group">
             <label>Логин</label>
-            <input type="text" name="login" value="<?= htmlspecialchars($login_input) ?>" required autocomplete="username">
+            <input type="text" name="login" value="<?= htmlspecialchars($login_input) ?>" required>
         </div>
         <div class="form-group">
             <label>Пароль</label>
-            <input type="password" name="password" required autocomplete="current-password" style="color: #ffffff;">
+            <input type="password" name="password" required>
         </div>
         <button type="submit">Войти</button>
     </form>
 
     <div class="back-link">
-        <a href="index.php">← Вернуться к форме</a>
-        <a href="view.php">📊 Просмотреть сохранённые анкеты</a>
+        <a href="index.php">← Вернуться к анкете</a>
+        <a href="view.php">📊 Просмотреть анкеты</a>
+        <a href="admin.php">⚙️ Админ-панель</a>
     </div>
 
     <div class="auth-hint">
         Нет аккаунта?<br>Заполните форму на главной странице — логин и пароль будут сгенерированы автоматически.
     </div>
 </div>
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <p>&copy; 2026 ЛАБА 6.</p>
+    </div>
+</footer>
 </body>
 </html>

@@ -13,7 +13,6 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-// Функция для подключения к БД
 function getDB() {
     static $pdo = null;
     if ($pdo === null) {
@@ -31,7 +30,6 @@ function getDB() {
     return $pdo;
 }
 
-// Генерация уникального логина
 function generate_unique_login($pdo) {
     do {
         $login = 'user_' . substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
@@ -59,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $values = [];
 
     $fields = ['full_name', 'phone', 'email', 'birth_date', 'gender', 'biography', 'contract_accepted', 'languages'];
+    $name_parts = ['last_name', 'first_name', 'patronymic'];
 
     foreach ($fields as $field) {
         $errors[$field] = !empty($_COOKIE[$field . '_error']);
@@ -73,7 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($errors['contract_accepted']) $messages[] = '<div class="error-message">Необходимо подтвердить согласие.</div>';
     if ($errors['languages']) $messages[] = '<div class="error-message">Выберите хотя бы один язык программирования из списка.</div>';
 
-    foreach ($fields as $field) {
+    // Чтение частей ФИО
+    foreach ($name_parts as $part) {
+        $values[$part] = empty($_COOKIE[$part . '_value']) ? '' : $_COOKIE[$part . '_value'];
+    }
+    // Остальные поля
+    $other_fields = ['phone', 'email', 'birth_date', 'gender', 'biography', 'contract_accepted', 'languages'];
+    foreach ($other_fields as $field) {
         $values[$field] = empty($_COOKIE[$field . '_value']) ? '' : $_COOKIE[$field . '_value'];
     }
     if (!empty($_COOKIE['languages_value'])) {
@@ -94,7 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt = $pdo->prepare("SELECT * FROM application WHERE id = ?");
             $stmt->execute([$user_id]);
             if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $values['full_name'] = $row['full_name'];
+                $name_parts_array = explode(' ', trim($row['full_name']), 3);
+                $values['last_name'] = $name_parts_array[0] ?? '';
+                $values['first_name'] = $name_parts_array[1] ?? '';
+                $values['patronymic'] = $name_parts_array[2] ?? '';
                 $values['phone'] = $row['phone'];
                 $values['email'] = $row['email'];
                 $values['birth_date'] = $row['birth_date'];
@@ -134,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             <strong>Форма успешно отправлена!</strong><br>
             Ваш логин: <strong>' . htmlspecialchars($generated_login) . '</strong><br>
             Ваш пароль: <strong>' . htmlspecialchars($generated_password) . '</strong><br>
-            <small>Сохраните их! Они больше никогда не будут показаны.</small>
+            <small>Сохраните их!</small>
         </div>';
     }
 
@@ -156,7 +164,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 else {
     $errors = false;
 
-    $full_name = trim($_POST['full_name'] ?? '');
+    // Получаем три части ФИО
+    $last_name = trim($_POST['last_name'] ?? '');
+    $first_name = trim($_POST['first_name'] ?? '');
+    $patronymic = trim($_POST['patronymic'] ?? '');
+    $full_name = trim($last_name . ' ' . $first_name . ' ' . $patronymic);
+    $full_name = preg_replace('/\s+/', ' ', $full_name);
+
     $phone = trim($_POST['phone'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $birth_date = trim($_POST['birth_date'] ?? '');
@@ -165,12 +179,14 @@ else {
     $contract_accepted = isset($_POST['contract_accepted']) ? 1 : 0;
     $languages = $_POST['languages'] ?? [];
 
-    // ФИО
+    // Валидация ФИО (объединённого)
     if (empty($full_name) || !preg_match('/^[а-яА-Яa-zA-Z\s]+$/u', $full_name) || strlen($full_name) > 150) {
         setcookie('full_name_error', '1', time() + 24*3600);
         $errors = true;
     }
-    setcookie('full_name_value', $full_name, time() + 30*24*3600);
+    setcookie('last_name_value', $last_name, time() + 30*24*3600);
+    setcookie('first_name_value', $first_name, time() + 30*24*3600);
+    setcookie('patronymic_value', $patronymic, time() + 30*24*3600);
 
     // Телефон
     if (empty($phone) || !preg_match('/^[\d\s\-\+\(\)]{6,12}$/', $phone)) {
@@ -245,7 +261,6 @@ else {
         $pdo->beginTransaction();
 
         if ($is_logged_in) {
-            // Обновление
             $stmt = $pdo->prepare("
                 UPDATE application 
                 SET full_name = :full_name, phone = :phone, email = :email,
@@ -268,7 +283,6 @@ else {
             $pdo->prepare("DELETE FROM application_language WHERE application_id = ?")->execute([$application_id]);
             setcookie('updated', '1', time() + 24*3600);
         } else {
-            // Новая запись
             $login = generate_unique_login($pdo);
             $plain_password = generate_password();
             $password_hash = password_hash($plain_password, PASSWORD_DEFAULT);
@@ -318,6 +332,7 @@ else {
         foreach ($fields as $field) {
             setcookie($field . '_error', '', 1);
         }
+       
 
         header('Location: index.php');
         exit();
